@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DEV MASTER CONTROL | RAYYSTORE</title>
+    <style>
+        :root { --accent: #00d2ff; --bg: #05070a; --card: #0d121b; --red: #ff4757; --green: #2ed573; --yellow: #f1c40f; }
+        * { margin:0; padding:0; box-sizing:border-box; font-family: 'Segoe UI', sans-serif; }
+        body { background: var(--bg); color: #fff; padding: 15px; overflow-x: hidden; }
+
+        /* LOADER LOGO R SMOOTH */
+        #loader { position:fixed; inset:0; background:var(--bg); z-index:10000; display:flex; align-items:center; justify-content:center; transition: 0.8s; }
+        .logo-r-load { font-size: 80px; font-weight: 900; color: var(--accent); text-shadow: 0 0 30px var(--accent); animation: pulse-load 1.5s infinite ease-in-out; }
+        @keyframes pulse-load { 0%, 100% { opacity: 0.5; transform: scale(0.9); } 50% { opacity: 1; transform: scale(1.1); } }
+
+        .logo-main { font-size: 50px; font-weight: 900; color: var(--accent); text-shadow: 0 0 20px var(--accent); animation: pulse-load 2s infinite; text-align:center; display:block; margin: 10px 0; }
+
+        /* LOGIN SCREEN */
+        #login-dev { position: fixed; inset: 0; background: var(--bg); z-index: 9999; display: flex; align-items: center; justify-content: center; }
+        .login-card { background: var(--card); padding: 30px; border-radius: 20px; border: 1px solid #1f2937; width: 90%; max-width: 350px; text-align: center; border-top: 4px solid var(--accent); }
+        input { width: 100%; padding: 12px; margin: 8px 0; background: #161d29; border: 1px solid #1f2937; color: #fff; border-radius: 10px; outline: none; }
+        .btn { width: 100%; padding: 12px; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; transition: 0.3s; margin-top: 5px; }
+        .btn-accent { background: var(--accent); color: #000; }
+
+        /* DASHBOARD GRID */
+        .grid { display: grid; grid-template-columns: 1fr; gap: 15px; max-width: 800px; margin: auto; padding-bottom: 50px; }
+        .box { background: var(--card); padding: 20px; border-radius: 18px; border: 1px solid #1f2937; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        h3 { font-size: 0.8rem; color: var(--accent); margin-bottom: 15px; border-bottom: 1px solid #1f2937; padding-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; }
+        
+        /* ADMIN ITEM STYLE */
+        .admin-item { background: #161d29; padding: 15px; border-radius: 12px; margin-bottom: 10px; border: 1px solid #1f2937; }
+        .admin-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .admin-actions { display: flex; gap: 8px; }
+        .btn-sm { flex: 1; padding: 8px; font-size: 0.7rem; border-radius: 6px; border: none; cursor: pointer; font-weight: bold; }
+
+        #notif { position: fixed; top: -100px; left: 50%; transform: translateX(-50%); background: var(--accent); color: #000; padding: 12px 25px; border-radius: 12px; font-weight: bold; z-index: 10001; transition: 0.5s; box-shadow: 0 10px 20px rgba(0,210,255,0.3); }
+        #notif.show { top: 20px; }
+    </style>
+</head>
+<body>
+
+<div id="loader"><div class="logo-r-load">R</div></div>
+
+<div id="notif">Pesan</div>
+
+<div id="login-dev">
+    <div class="login-card">
+        <div class="logo-main">R</div>
+        <h3 style="border:none;">MASTER DEV ACCESS</h3>
+        <input type="text" id="dev-user" placeholder="Username">
+        <input type="password" id="dev-pass" placeholder="Secret Key">
+        <button class="btn btn-accent" onclick="devLogin()">UNLOCК MASTER PANEL</button>
+    </div>
+</div>
+
+<div id="dev-panel" style="display:none;">
+    <div class="logo-main">R</div>
+    <h2 style="text-align:center; margin-bottom:25px; letter-spacing: 2px;">DEV <span style="color:var(--accent)">PANEL</span></h2>
+
+    <div class="grid">
+        <div class="box">
+            <h3>⚡ Server Lock Control</h3>
+            <button class="btn" style="background:var(--green)" onclick="setServer('ON')">BUKA TOKO (ONLINE)</button>
+            <button class="btn" style="background:var(--red); color:#fff" onclick="setServer('OFF')">TUTUP TOKO (OFFLINE)</button>
+        </div>
+
+        <div class="box">
+            <h3>👥 Tambah Akun Admin Baru</h3>
+            <input type="text" id="new-admin-user" placeholder="Username Admin">
+            <input type="password" id="new-admin-pass" placeholder="Password Admin">
+            <button class="btn btn-accent" onclick="addAdmin()">BUAT AKUN ADMIN</button>
+        </div>
+
+        <div class="box">
+            <h3>Manajemen Data Admin</h3>
+            <div id="admin-list">Memuat data...</div>
+        </div>
+
+        <div class="box">
+            <h3>🕒 Riwayat Login Admin</h3>
+            <div id="login-history" style="font-size: 0.75rem; max-height: 150px; overflow-y: auto; color: #8b949e; background: #05070a; padding: 10px; border-radius: 10px;">
+                Belum ada log masuk.
+            </div>
+        </div>
+
+        <div class="box" style="border: 1px solid var(--red);">
+            <h3>⚠️ Danger Zone</h3>
+            <button class="btn" style="background:#111; color:var(--red); border:1px solid var(--red)" onclick="clearTrx()">HAPUS SEMUA TRANSAKSI</button>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getDatabase, ref, set, onValue, remove, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    
+    const db = getDatabase(initializeApp({ 
+        databaseURL: "https://rayy-all-web-default-rtdb.asia-southeast1.firebasedatabase.app/" 
+    }));
+
+    // LOADER LOGIC
+    window.addEventListener('load', () => {
+        setTimeout(() => { 
+            document.getElementById('loader').style.opacity = '0';
+            setTimeout(() => document.getElementById('loader').style.display = 'none', 800);
+        }, 1500);
+    });
+
+    // MASTER LOGIN: rayy_dev / 085794
+    window.devLogin = () => {
+        if(document.getElementById('dev-user').value === "rayy_dev" && document.getElementById('dev-pass').value === "085794") {
+            document.getElementById('login-dev').style.display = 'none';
+            document.getElementById('dev-panel').style.display = 'block';
+            showNotif("🔓 Akses Master Diterima!");
+        } else { showNotif("❌ Akses Ditolak!"); }
+    };
+
+    function showNotif(t) {
+        const n = document.getElementById('notif');
+        n.innerText = t; n.classList.add('show');
+        setTimeout(() => n.classList.remove('show'), 3000);
+    }
+
+    // SERVER LOCK
+    window.setServer = (v) => set(ref(db, 'server_status'), v).then(() => showNotif("Toko Set: " + v));
+
+    // MANAJEMEN ADMIN (TAMBAH)
+    window.addAdmin = () => {
+        const u = document.getElementById('new-admin-user').value.trim();
+        const p = document.getElementById('new-admin-pass').value.trim();
+        if(!u || !p) return showNotif("⚠️ Isi Username & PW!");
+        set(ref(db, 'admins/' + u), {
+            username: u, password: p, status: "Active", createdAt: new Date().toLocaleString()
+        }).then(() => {
+            showNotif("✅ Admin " + u + " Ditambahkan!");
+            document.getElementById('new-admin-user').value = "";
+            document.getElementById('new-admin-pass').value = "";
+        });
+    };
+
+    // MANAJEMEN ADMIN (LIST, BAN, HAPUS)
+    onValue(ref(db, 'admins'), (snap) => {
+        const list = document.getElementById('admin-list');
+        list.innerHTML = "";
+        if(!snap.exists()) { list.innerHTML = "<p style='color:#444; text-align:center;'>Belum ada akun admin.</p>"; return; }
+        snap.forEach(child => {
+            const a = child.val();
+            const isBanned = a.status === "Banned";
+            list.innerHTML += `
+                <div class="admin-item">
+                    <div class="admin-info">
+                        <span><b>${a.username}</b></span>
+                        <span style="color:${isBanned ? 'var(--red)' : 'var(--green)'}; font-size:0.7rem;">● ${a.status}</span>
+                    </div>
+                    <div class="admin-actions">
+                        <button class="btn-sm" style="background:var(--yellow)" onclick="toggleBan('${a.username}', '${a.status}')">
+                            ${isBanned ? 'UNBAN' : 'BAN'}
+                        </button>
+                        <button class="btn-sm" style="background:var(--red); color:#fff" onclick="delAdmin('${a.username}')">
+                            HAPUS AKUN
+                        </button>
+                    </div>
+                </div>
+            `;
+        });
+    });
+
+    window.toggleBan = (user, current) => {
+        const next = current === "Active" ? "Banned" : "Active";
+        update(ref(db, 'admins/' + user), { status: next }).then(() => showNotif("Admin di-" + next));
+    };
+
+    window.delAdmin = (user) => { 
+        if(confirm("Hapus akun " + user + " permanen?")) {
+            remove(ref(db, 'admins/' + user)).then(() => showNotif("🗑️ Akun Dihapus"));
+        }
+    };
+
+    // LOGS
+    onValue(ref(db, 'login_logs'), (snap) => {
+        const h = document.getElementById('login-history');
+        h.innerHTML = "";
+        snap.forEach(child => {
+            const l = child.val();
+            h.innerHTML = `<div style="margin-bottom:5px;">> [${l.time}] <b>${l.user}</b> Masuk</div>` + h.innerHTML;
+        });
+    });
+
+    window.clearTrx = () => { if(confirm("Hapus semua riwayat transaksi?")) remove(ref(db, 'transactions')); };
+
+</script>
+</body>
+</html>
