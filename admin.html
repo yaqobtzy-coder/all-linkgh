@@ -3,53 +3,128 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ADMIN PANEL - RAYYSTORE</title>
+    <title>ADMIN | RIWAYAT TRANSAKSI</title>
     <style>
-        :root { --accent: #00d2ff; --bg: #05070a; --card: #0d121b; }
+        :root { --accent: #00d2ff; --bg: #05070a; --card: #0d121b; --green: #2ecc71; }
         * { margin:0; padding:0; box-sizing:border-box; font-family: 'Segoe UI', sans-serif; }
         body { background: var(--bg); color: #fff; padding: 20px; }
-        .container { max-width: 600px; margin: auto; }
-        .card-admin { background: var(--card); border: 1px solid #1f2937; border-radius: 15px; padding: 20px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
-        .btn-acc { background: #2ecc71; color: #000; border: none; padding: 8px 15px; border-radius: 8px; font-weight: bold; cursor: pointer; }
-        .btn-del { background: #e74c3c; color: #fff; border: none; padding: 8px 15px; border-radius: 8px; font-weight: bold; cursor: pointer; margin-left: 5px; }
+
+        /* LOADER LOGO R */
+        #loader { position:fixed; inset:0; background:var(--bg); z-index:9999; display:flex; align-items:center; justify-content:center; transition: 1s; }
+        .logo-r { font-size: 80px; font-weight: 900; color: var(--accent); text-shadow: 0 0 30px var(--accent); animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 0.5; transform: scale(0.9); } 50% { opacity: 1; transform: scale(1.1); } }
+
+        /* LOGIN SCREEN STYLE */
+        #login-screen { position: fixed; inset: 0; background: var(--bg); z-index: 9000; display: flex; align-items: center; justify-content: center; padding: 20px; }
+        .login-card { background: var(--card); padding: 30px; border-radius: 20px; border: 1px solid #1f2937; width: 100%; max-width: 350px; text-align: center; }
+        .login-card input { width: 100%; padding: 12px; margin: 10px 0; background: #161d29; border: 1px solid #1f2937; color: #fff; border-radius: 10px; outline: none; }
+        .btn-login { width: 100%; padding: 12px; background: var(--accent); color: #000; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; }
+
+        /* NOTIF SLIDE */
+        .notif { position: fixed; top: -120px; left: 50%; transform: translateX(-50%); background: var(--card); border: 1px solid var(--accent); padding: 15px 30px; border-radius: 15px; z-index: 10000; transition: 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-shadow: 0 10px 30px rgba(0,210,255,0.4); text-align: center; min-width: 280px; font-weight: bold; }
+        .notif.show { top: 30px; }
+
+        .trx-card { background: var(--card); border-radius: 18px; padding: 20px; margin-bottom: 15px; border-left: 6px solid var(--accent); position: relative; }
+        .trx-card.success { border-left-color: var(--green); }
+        .trx-val { font-size: 1.2rem; font-weight: 800; margin-bottom: 5px; }
+        .status-badge { position: absolute; top: 20px; right: 20px; font-size: 0.8rem; font-weight: bold; }
+        .btn-acc { width: 100%; padding: 12px; background: var(--green); border: none; border-radius: 10px; font-weight: bold; margin-top: 10px; cursor: pointer; }
+        .btn-del { background: #e74c3c; color: white; border: none; padding: 5px 10px; border-radius: 5px; margin-top: 10px; cursor: pointer; font-size: 0.7rem; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1 style="margin-bottom:20px; border-bottom: 2px solid var(--accent); padding-bottom:10px;">PANEL KONFIRMASI</h1>
-        <div id="admin-list"></div>
+
+<div id="loader"><div class="logo-r">R</div></div>
+<div id="notif-box" class="notif">Pesan</div>
+
+<div id="login-screen">
+    <div class="login-card">
+        <div class="logo-r" style="font-size: 40px; margin-bottom: 20px;">R</div>
+        <h3 style="margin-bottom: 20px; color: var(--accent);">ADMIN LOGIN</h3>
+        <input type="text" id="admin-user" placeholder="Username">
+        <input type="password" id="admin-pass" placeholder="Password">
+        <button class="btn-login" onclick="handleLogin()">MASUK KE PANEL</button>
     </div>
+</div>
+
+<div id="admin-panel" style="display: none; max-width: 500px; margin: auto;">
+    <div class="header" style="margin-bottom:20px; text-align:center;">
+        <h2 style="color:var(--accent)">PANEL ADMIN</h2>
+        <p id="total-text">Total Transaksi: 0</p>
+    </div>
+    <div id="trx-list"></div>
+</div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getDatabase, ref, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
     const db = getDatabase(initializeApp({ databaseURL: "https://rayy-all-web-default-rtdb.asia-southeast1.firebasedatabase.app/" }));
 
-    onValue(ref(db, 'transactions'), (snap) => {
-        const list = document.getElementById('admin-list');
-        list.innerHTML = "";
-        const data = snap.val();
-        if(!data) return;
+    // Login Logic pake Access Key Lu
+    window.handleLogin = () => {
+        const user = document.getElementById('admin-user').value;
+        const pass = document.getElementById('admin-pass').value;
 
-        Object.values(data).forEach(t => {
-            const div = document.createElement('div');
-            div.className = 'card-admin';
-            div.innerHTML = `
-                <div>
-                    <h4 style="color:var(--accent)">${t.buyer}</h4>
-                    <p>${t.amount} - <span style="color:#8b949e">${t.status}</span></p>
-                </div>
-                <div>
-                    ${t.status === "Pending" ? `<button class="btn-acc" onclick="acc('${t.orderId}')">ACC</button>` : ''}
-                    <button class="btn-del" onclick="hapus('${t.orderId}')">X</button>
-                </div>
-            `;
-            list.appendChild(div);
-        });
+        if (user === "admin_rayy" && pass === "085794") {
+            showNotif("✅ Login Berhasil!");
+            document.getElementById('login-screen').style.display = 'none';
+            document.getElementById('admin-panel').style.display = 'block';
+        } else {
+            showNotif("❌ Username atau Password Salah!");
+        }
+    };
+
+    window.addEventListener('load', () => {
+        setTimeout(() => { 
+            document.getElementById('loader').style.opacity = '0'; 
+            setTimeout(() => document.getElementById('loader').style.display = 'none', 1000);
+        }, 1500);
     });
 
-    window.acc = (id) => { update(ref(db, 'transactions/' + id), { status: "Sukses" }); };
-    window.hapus = (id) => { if(confirm("Hapus data ini?")) remove(ref(db, 'transactions/' + id)); };
+    window.showNotif = (txt) => {
+        const n = document.getElementById('notif-box');
+        n.innerText = txt; n.classList.add('show');
+        setTimeout(() => n.classList.remove('show'), 3000);
+    };
+
+    onValue(ref(db, 'transactions'), (snap) => {
+        const container = document.getElementById('trx-list');
+        container.innerHTML = "";
+        let count = 0;
+        if(!snap.exists()) { container.innerHTML = "<p style='text-align:center;'>Kosong...</p>"; return; }
+        
+        snap.forEach((child) => {
+            count++;
+            const data = child.val();
+            const isDone = data.status === "Sukses";
+            container.innerHTML = `
+                <div class="trx-card ${isDone ? 'success' : ''}">
+                    <div style="color:var(--accent); font-size:0.8rem;">${data.orderId}</div>
+                    <div class="trx-val">${data.amount}</div>
+                    <div style="font-size:0.85rem; font-weight:bold;">Pembeli: ${data.buyer}</div>
+                    <div style="font-size:0.7rem; color:#8b949e;">${data.time}</div>
+                    <div class="status-badge" style="color:${isDone ? '#2ecc71' : '#f1c40f'}">${isDone ? '✓ Sukses' : '⏳ Pending'}</div>
+                    ${!isDone ? `<button class="btn-acc" onclick="accTrx('${data.orderId}')">KONFIRMASI PEMBAYARAN</button>` : ''}
+                    <button class="btn-del" onclick="hapusTrx('${data.orderId}')">Hapus Data</button>
+                </div>
+            ` + container.innerHTML;
+        });
+        document.getElementById('total-text').innerText = "Total Transaksi: " + count;
+    });
+
+    window.accTrx = (id) => {
+        update(ref(db, `transactions/${id}`), { status: "Sukses" }).then(() => {
+            showNotif("✅ Transaksi Dikonfirmasi!");
+        });
+    };
+
+    window.hapusTrx = (id) => {
+        if(confirm("Hapus pesanan ini dari database?")) {
+            remove(ref(db, `transactions/${id}`)).then(() => {
+                showNotif("🗑️ Berhasil dihapus!");
+            });
+        }
+    };
 </script>
 </body>
 </html>
